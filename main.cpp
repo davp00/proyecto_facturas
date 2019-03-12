@@ -865,7 +865,7 @@ void menus(int tipo)
         gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
         gotoxy(30,3);cout << ("²                  HUD                    ²");
         gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
-        gotoxy(30,5);cout << ("²          Sistema de medallas            ²");
+        gotoxy(30,5);cout << ("²          Sistema de facturas            ²");
         gotoxy(30,6);cout << ("²                                         ²");
         gotoxy(30,7);cout << ("²    1-> Crear Factura                    ²");
         gotoxy(30,8);cout << ("²    2-> Mostrar Factura                  ²");
@@ -900,7 +900,7 @@ void menus(int tipo)
       if(tipo == 3)
     {
         gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
-        gotoxy(30,3);cout << ("²           Nuevo Producto       ²");
+        gotoxy(30,3);cout << ("²        Nuevo Producto          ²");
         gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
         gotoxy(30,5);cout << ("²            Producto            ²");
         gotoxy(30,6);cout << ("²                                ²");

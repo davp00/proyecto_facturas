@@ -140,7 +140,7 @@ Factura *facturas_por_fecha( Factura *ptr, Fecha fecha);
 
 FacturaInfo *insertar_facturaInfo( FacturaInfo *ptr, int numFactura, string producto, int cant, int valor_unitario );
 bool existe_producto( FacturaInfo *ptr, string producto );
-FacturaInfo *buscar_producto( FacturaInfo *ptr, string producto);
+FacturaInfo *buscar_producto( FacturaInfo *ptr, int numFactura ,string producto);
 FacturaInfo *info_facturas( FacturaInfo *ptr, int numFactura );
 int totalFactura( int numFactura );
 
@@ -161,13 +161,6 @@ FacturaInfo *fct_info = NULL;
 int main ( )
 {
     bool salir = false;
-
-    Fecha fecha;
-    fecha.datos("12","03", "2019");
-    facturas = insertar_factura( facturas, 123, fecha, "Daniel Viloria");
-
-    infos = insertar_facturaInfo( infos, 123, "Minecraft", 5, 150);
-    infos = insertar_facturaInfo( infos, 123, "GTA", 5, 200);
 
 
     do
@@ -192,7 +185,13 @@ int main ( )
 
             case 3 + TECLA:
                 system("CLS");
-                    editar_factura();
+                    if ( facturas )
+                        editar_factura();
+                    else
+                    {
+                        cout << "No hay facturas para editar";
+                        getch();
+                    }
 
                 system("CLS");
             break;
@@ -209,7 +208,10 @@ int main ( )
 
             case 5 + TECLA:
                 system("CLS");
-                    informe_por_rango();
+                    if ( facturas )
+                        informe_por_rango();
+                    else
+                        cout<< "No existen facturas en los registros";
                 getch();
                 system("CLS");
             break;
@@ -386,7 +388,7 @@ void mostrar_factura()
     gotoxy(45, 14);cout << "Valor U.";
     gotoxy(60, 14);cout << "Total $";
 
-    FacturaInfo *i = infos;
+    FacturaInfo *i = info_facturas( infos, factura->num);
     int y = 16;
     int total = 0;
     int totalProducto = 0;
@@ -448,7 +450,7 @@ void editar_factura()
         gotoxy(45, 14);cout << "Valor U.";
         gotoxy(60, 14);cout << "Total $";
 
-        FacturaInfo *i = infos;
+        FacturaInfo *i = info_facturas( infos, factura->num);
         int y = 16;
         int total = 0;
         int totalProducto = 0;
@@ -479,7 +481,7 @@ void editar_factura()
                 gotoxy(85, 2); cout << "Buscar Producto: ";
                 producto = leer_letras();
 
-                FacturaInfo *fi = buscar_producto( infos, producto );
+                FacturaInfo *fi = buscar_producto( infos, factura->num ,producto );
 
                 if ( fi == NULL )
                 {
@@ -665,6 +667,7 @@ void informe_por_rango()
         }
 
         y ++;
+        total_dia = 0;
 
         from.aumentar();
     }
@@ -797,13 +800,13 @@ bool existe_producto( FacturaInfo *ptr, string producto )
     return false;
 }
 
-FacturaInfo *buscar_producto( FacturaInfo *ptr, string producto)
+FacturaInfo *buscar_producto( FacturaInfo *ptr, int numFactura,string producto)
 {
     FacturaInfo *i = ptr;
 
     while( i )
     {
-        if( strcmpi( i->producto.c_str(), producto.c_str() ) == 0 )
+        if( i->numFactura == numFactura && strcmpi( i->producto.c_str(), producto.c_str() ) == 0 )
             return i;
         i = i->sig;
     }
@@ -897,9 +900,9 @@ void menus(int tipo)
       if(tipo == 3)
     {
         gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
-        gotoxy(30,3);cout << ("²           Equipos              ²");
+        gotoxy(30,3);cout << ("²           Nuevo Producto       ²");
         gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
-        gotoxy(30,5);cout << ("²           Puntos               ²");
+        gotoxy(30,5);cout << ("²            Producto            ²");
         gotoxy(30,6);cout << ("²                                ²");
         gotoxy(30,7);cout << ("²  Nombre:                       ²");
         gotoxy(30,8);cout << ("²  Cantidad:                     ²");

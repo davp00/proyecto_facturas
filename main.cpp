@@ -13,10 +13,6 @@ struct Fecha
     int month;
     int year;
 
-    Fecha( string _day, string _month, string _year )
-    {
-        datos(_day, _month, _year);
-    }
 
     void datos( string _day, string _month, string _year )
     {
@@ -36,19 +32,49 @@ struct Fecha
         return month == 4 || month == 6 || month == 9 || month == 11;
     }
 
-    bool igual ( Fecha *fecha )
+    int limite()
     {
-        return day == fecha->day && month == fecha->month && year == fecha->year;
+        if ( month == 2 )
+            return bisiesto() ? 29 : 28;
+        else
+            if ( mes30() )
+                return 30;
+            else
+                return 31;
     }
 
-    bool despues_de( Fecha *fecha )
+    void aumentar()
     {
-        return day >= fecha->day && month >= fecha->month && year >= fecha->year;
+        if ( day < limite() )
+            day ++;
+        else
+        {
+            day = 1;
+
+            if ( month == 12 )
+            {
+                month   = 1;
+                year++;
+            }else
+            {
+                month ++;
+            }
+        }
     }
 
-    bool antes_de( Fecha *fecha )
+    bool igual ( Fecha fecha )
     {
-        return day <= fecha->day && month <= fecha->month && year <= fecha->year;
+        return day == fecha.day && month == fecha.month && year == fecha.year;
+    }
+
+    bool despues_de( Fecha fecha )
+    {
+        return day >= fecha.day && month >= fecha.month && year >= fecha.year;
+    }
+
+    bool antes_de( Fecha fecha )
+    {
+        return day <= fecha.day || month < fecha.month || year < fecha.year;
     }
 
     bool valida()
@@ -83,7 +109,7 @@ struct Fecha
 struct Factura
 {
     int num;
-    Fecha *fecha;
+    Fecha fecha;
     string cliente;
 
     Factura *sig;
@@ -107,14 +133,23 @@ void menus(int tipo);
 int menu(int ini , int fin , int tipo);
 void gotoxy( int x, int y );
 
-Factura *insertar_factura( Factura *ptr, int num, Fecha *fecha, string cliente );
+Factura *insertar_factura( Factura *ptr, int num, Fecha fecha, string cliente );
 int N_facturas( Factura *ptr );
+Factura *buscar_factura( Factura *ptr, int num );
+Factura *facturas_por_fecha( Factura *ptr, Fecha fecha);
 
 FacturaInfo *insertar_facturaInfo( FacturaInfo *ptr, int numFactura, string producto, int cant, int valor_unitario );
 bool existe_producto( FacturaInfo *ptr, string producto );
+FacturaInfo *buscar_producto( FacturaInfo *ptr, string producto);
+FacturaInfo *info_facturas( FacturaInfo *ptr, int numFactura );
+int totalFactura( int numFactura );
 
 
 void crear_factura();
+void mostrar_factura();
+void informe_por_fecha();
+void informe_por_rango();
+void editar_factura();
 
 Factura *facturas   = NULL;
 FacturaInfo *infos   = NULL;
@@ -130,24 +165,45 @@ int main ( )
     do
     {
 
-        switch( menu(1+TECLA,4+TECLA, 1) )
+        switch( menu(1+TECLA,5+TECLA, 1) )
         {
             case 1 + TECLA:
                 system("CLS");
-                crear_factura();
-                getch();
+                    crear_factura();
             break;
 
             case 2 + TECLA:
-
+                system("CLS");
+                    if( facturas != NULL )
+                        mostrar_factura();
+                    else
+                        cout<< "No existen facturas en los registros";
+                getch();
+                system("CLS");
             break;
 
             case 3 + TECLA:
-
+                system("CLS");
+                    editar_factura();
+                getch();
+                system("CLS");
             break;
 
             case 4 + TECLA:
+                system("CLS");
+                    if( facturas != NULL )
+                        informe_por_fecha();
+                    else
+                        cout<< "No existen facturas en los registros";
+                getch();
+                system("CLS");
+            break;
 
+            case 5 + TECLA:
+                system("CLS");
+                    informe_por_rango();
+                getch();
+                system("CLS");
             break;
 
             case 27:
@@ -181,9 +237,9 @@ void crear_factura()
     gotoxy(45, 10); month       = leer_numeros();
     gotoxy(45, 11); year        = leer_numeros();
 
-    fct->fecha = new Fecha( day , month, year );
+    fct->fecha.datos( day , month, year );
 
-    if ( fct->fecha->valida() )
+    if ( fct->fecha.valida() )
     {
         bool salir = false;
 
@@ -192,10 +248,92 @@ void crear_factura()
             system("CLS");
             gotoxy(10, 2);cout << "Factura # "<< fct->num ;
             gotoxy(10, 4);cout << "Cliente: " << fct->cliente;
-            gotoxy(10, 5);cout << "Fecha: "<< fct->fecha->toString();
+            gotoxy(10, 5);cout << "Fecha: "<< fct->fecha.toString();
+
+
+            gotoxy(10, 12);cout << "___________________________________________________________________";
+            gotoxy(10, 14);cout << "Producto";
+            gotoxy(30, 14);cout << "Cantidad";
+            gotoxy(45, 14);cout << "Valor U.";
+            gotoxy(60, 14);cout << "Total $";
+
+            FacturaInfo *i = fct_info;
+            int y = 16;
+            int total = 0;
+            int totalProducto = 0;
+
+            while ( i != NULL )
+            {
+            	gotoxy(10, y); cout << i->producto;
+            	gotoxy(30, y); cout << i->cant;
+            	gotoxy(45, y); cout << i->valor_unitario;
+
+            	totalProducto 	= i->cant * i->valor_unitario;
+            	total 			+= totalProducto;
+
+            	gotoxy(60, y); cout << totalProducto;
+            	y ++;
+            	i = i->sig;
+			}
+
+			gotoxy(10, y+1);cout << "___________________________________________________________________";
+			gotoxy(52, y+3);cout << "Total : " << total;
 
             switch( menu( 1+TECLA, 3+TECLA, 4 ) )
             {
+                case 1 + TECLA:
+				{
+					string producto;
+					int cantidad;
+					int valor_unitario;
+
+					system("CLS");
+            		menus( 3 );
+            		gotoxy(40, 7); producto = leer_letras();
+
+
+            		if( existe_producto( fct_info, producto ) )
+                    {
+                        gotoxy(10, 15); cout << "Ya existe un producto con este nombre en la factura";
+                        getch();
+                        break;
+                    }
+
+            		gotoxy(43, 8); cantidad	= atoi( leer_numeros().c_str() );
+            		gotoxy(48, 9); valor_unitario = atoi( leer_numeros().c_str());
+
+            		fct_info = insertar_facturaInfo( fct_info, fct->num, producto, cantidad, valor_unitario );
+				}
+                break;
+
+
+                case 2 + TECLA:
+            	{
+            		if ( fct_info != NULL )
+            		{
+            			facturas = insertar_factura( facturas, fct->num, fct->fecha, fct->cliente);
+
+
+            			while ( fct_info != NULL )
+            			{
+            				infos	= insertar_facturaInfo( infos, fct->num, fct_info->producto, fct_info->cant, fct_info->valor_unitario);
+            				fct_info= fct_info->sig;
+						}
+
+						gotoxy(10, y+5); cout << "Factura guardada con exito";
+                        getch();
+						fct_info    = NULL;
+						fct         = NULL;
+						salir 		= true;
+						system("CLS");
+					}else
+					{
+						gotoxy(10, y+5);cout << "Debe haber por lo menos un producto en la factura";
+						getch();
+					}
+				}
+				break;
+
                 case 3 + TECLA:
                     salir = true;
                     system("CLS");
@@ -210,7 +348,183 @@ void crear_factura()
 }
 
 
-Factura *insertar_factura( Factura *ptr, int num, Fecha *fecha, string cliente )
+void mostrar_factura()
+{
+    int n_factura;
+
+    menus(5);
+    gotoxy(40, 7); n_factura = atoi( leer_numeros().c_str() );
+
+
+    system("CLS");
+
+    Factura *factura = buscar_factura( facturas, n_factura );
+
+
+    if( factura == NULL )
+    {
+        gotoxy(10, 2 ); cout << "El numero de factura no fue encontrado";
+        return ;
+    }
+
+    gotoxy(10, 2);cout << "Factura # "<< factura->num ;
+    gotoxy(10, 4);cout << "Cliente: " << factura->cliente;
+    gotoxy(10, 5);cout << "Fecha: "<< factura->fecha.toString();
+
+
+    gotoxy(10, 12);cout << "___________________________________________________________________";
+    gotoxy(10, 14);cout << "Producto";
+    gotoxy(30, 14);cout << "Cantidad";
+    gotoxy(45, 14);cout << "Valor U.";
+    gotoxy(60, 14);cout << "Total $";
+
+    FacturaInfo *i = infos;
+    int y = 16;
+    int total = 0;
+    int totalProducto = 0;
+
+    while ( i != NULL )
+    {
+        gotoxy(10, y); cout << i->producto;
+        gotoxy(30, y); cout << i->cant;
+        gotoxy(45, y); cout << i->valor_unitario;
+
+        totalProducto 	= i->cant * i->valor_unitario;
+        total 			+= totalProducto;
+
+        gotoxy(60, y); cout << totalProducto;
+        y ++;
+        i = i->sig;
+    }
+
+
+    gotoxy(10, y+1);cout << "___________________________________________________________________";
+    gotoxy(52, y+3);cout << "Total : " << total;
+}
+
+
+
+void editar_factura()
+{
+    int n_factura;
+
+    menus( 8 );
+
+    gotoxy(40, 7); n_factura = atoi( leer_numeros().c_str() );
+    system("CLS");
+}
+
+
+void informe_por_fecha()
+{
+    menus( 6 );
+    string day;
+    string month;
+    string year;
+
+
+    gotoxy(38, 9);  day     = leer_numeros();
+    gotoxy(38, 10); month   = leer_numeros();
+    gotoxy(38, 11); year    = leer_numeros();
+
+    system("CLS");
+
+    Fecha fecha;
+
+    fecha.datos( day, month, year );
+
+    Factura *fcts = facturas_por_fecha( facturas, fecha );
+
+    gotoxy(10, 2);  cout << "Facturas del " << fecha.toString();
+    gotoxy(10, 4);  cout << "___________________________________________________________________";
+    gotoxy(10, 6);  cout << "#";
+    gotoxy(20, 6);  cout << "Cliente";
+    gotoxy(40, 6);  cout << "Total F.";
+
+    int y = 8;
+    int total_final_dia = 0;
+
+    while( fcts )
+    {
+        gotoxy(10, y); cout << fcts->num;
+        gotoxy(20, y); cout << fcts->cliente;
+
+        int subtotal    = totalFactura( fcts->num );
+        total_final_dia += subtotal;
+
+        gotoxy(40, y); cout << subtotal;
+
+        y++;
+        fcts = fcts->sig;
+    }
+
+    gotoxy(10, y+1);cout << "___________________________________________________________________";
+    gotoxy(32, y+3);cout << "Total : " << total_final_dia;
+
+}
+
+
+void informe_por_rango()
+{
+    string from_day, from_month, from_year, to_day, to_month, to_year;
+
+    menus( 7 );
+
+    gotoxy(38, 9); from_day     = leer_numeros();
+    gotoxy(38, 10); from_month  = leer_numeros();
+    gotoxy(39, 11); from_year   = leer_numeros();
+
+    gotoxy(57, 9); to_day       = leer_numeros();
+    gotoxy(57, 10); to_month    = leer_numeros();
+    gotoxy(58, 11); to_year     = leer_numeros();
+
+
+    system("CLS");
+
+    Fecha from, to;
+
+    from.datos( from_day, from_month, from_year );
+
+    to.datos( to_day, to_month, to_year );
+
+    gotoxy(10, 2); cout << "Facturas desde " << from.toString() << " Hasta " << to.toString();
+    gotoxy(10, 4); cout << "___________________________________________________________________";
+    gotoxy(10, 6); cout << "Fecha";
+    gotoxy(30, 6); cout << "Total D.";
+
+    int total_final_rango = 0;
+    int total_dia = 0, y = 8;
+
+    while( from.antes_de( to ) )
+    {
+        Factura *f_dias = facturas_por_fecha( facturas, from );
+
+        while ( f_dias )
+        {
+            total_dia   += totalFactura( f_dias->num );
+            f_dias      = f_dias->sig;
+        }
+
+
+        if ( total_dia != 0 )
+        {
+            gotoxy(10, y);cout << from.toString();
+            gotoxy(30, y);cout << total_dia;
+
+            total_final_rango += total_dia;
+        }
+
+        y ++;
+
+        from.aumentar();
+    }
+
+    gotoxy(10, y+1);cout << "___________________________________________________________________";
+    gotoxy(23, y+3);cout << "Total : " << total_final_rango;
+}
+
+
+Factura *insertar_factura( Factura *ptr, int num, Fecha fecha, string cliente )
 {
     Factura *nueva  = new Factura();
     nueva->num      = num;
@@ -219,7 +533,7 @@ Factura *insertar_factura( Factura *ptr, int num, Fecha *fecha, string cliente )
 
     nueva->sig      = NULL;
 
-    if ( ptr )
+    if ( ptr == NULL )
     {
         ptr = nueva;
     }else
@@ -231,6 +545,26 @@ Factura *insertar_factura( Factura *ptr, int num, Fecha *fecha, string cliente )
 
     return ptr;
 }
+
+
+Factura *facturas_por_fecha( Factura *ptr, Fecha fecha)
+{
+    Factura *lista  = NULL;
+    Factura *i      = ptr;
+
+    while ( i )
+    {
+        if ( i->fecha.igual( fecha ) )
+        {
+            lista = insertar_factura( lista, i->num, i->fecha, i->cliente );
+        }
+
+        i = i->sig;
+    }
+
+    return lista;
+}
+
 
 int N_facturas( Factura *ptr )
 {
@@ -246,6 +580,21 @@ int N_facturas( Factura *ptr )
     return cont;
 }
 
+Factura *buscar_factura( Factura *ptr, int num )
+{
+    Factura *i = ptr;
+
+    while( i )
+    {
+        if( i->num == num )
+            return i;
+
+        i = i->sig;
+    }
+
+    return i;
+}
+
 FacturaInfo *insertar_facturaInfo( FacturaInfo *ptr, int numFactura, string producto, int cant, int valor_unitario )
 {
     FacturaInfo *nueva      = new FacturaInfo();
@@ -258,7 +607,7 @@ FacturaInfo *insertar_facturaInfo( FacturaInfo *ptr, int numFactura, string prod
 
     if ( ! ptr )
     {
-        nueva = ptr;
+        ptr = nueva;
     } else
     {
         FacturaInfo *ant = ptr;
@@ -267,6 +616,64 @@ FacturaInfo *insertar_facturaInfo( FacturaInfo *ptr, int numFactura, string prod
     }
 
     return ptr;
+}
+
+int totalFactura( int numFactura )
+{
+    FacturaInfo *info_f = info_facturas( infos, numFactura );
+    int total = 0;
+
+    while ( info_f )
+    {
+        total   += info_f->cant * info_f->valor_unitario;
+        info_f  = info_f->sig;
+    }
+
+    return total;
+}
+
+bool existe_producto( FacturaInfo *ptr, string producto )
+{
+    FacturaInfo *i = ptr;
+
+    while( i )
+    {
+        if( strcmpi( i->producto.c_str(), producto.c_str() ) == 0 )
+            return true;
+        i = i->sig;
+    }
+
+
+    return false;
+}
+
+FacturaInfo *buscar_producto( FacturaInfo *ptr, string producto)
+{
+    FacturaInfo *i = ptr;
+
+    while( i )
+    {
+        if( strcmpi( i->producto.c_str(), producto.c_str() ) == 0 )
+            return i;
+        i = i->sig;
+    }
+
+
+    return i;
+}
+
+FacturaInfo *info_facturas( FacturaInfo *ptr, int numFactura )
+{
+    FacturaInfo *lista  = NULL;
+    FacturaInfo * i     = ptr;
+
+    while ( i )
+    {
+        if ( i->numFactura == numFactura )
+            lista = insertar_facturaInfo( lista, numFactura, i->producto, i->cant, i->valor_unitario );
+        i = i->sig;
+    }
+    return lista;
 }
 
 int menu(int ini , int fin , int tipo)
@@ -288,7 +695,7 @@ int menu(int ini , int fin , int tipo)
 			gotoxy(30,20+intentos);cout<<("Porfavor seleccione un numero del menu");
 			if(intentos == 4){
                     intentos=0;
-					menus(tipo);
+                    return tecla;
 			}
 		}
 
@@ -344,9 +751,9 @@ void menus(int tipo)
         gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
         gotoxy(30,5);cout << ("²           Puntos               ²");
         gotoxy(30,6);cout << ("²                                ²");
-        gotoxy(30,7);cout << ("²  De:                           ²");
-        gotoxy(30,8);cout << ("²  Hasta:                        ²");
-        gotoxy(30,9);cout << ("²                                ²");
+        gotoxy(30,7);cout << ("²  Nombre:                       ²");
+        gotoxy(30,8);cout << ("²  Cantidad:                     ²");
+        gotoxy(30,9);cout << ("²  Valor unitario:               ²");
         gotoxy(30,10);cout << ("²                                ²");
         gotoxy(30,11);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
     }
@@ -362,6 +769,64 @@ void menus(int tipo)
         gotoxy(50,8);cout << ("² 3-> Salir            ²");
         gotoxy(50,9);cout << ("²                      ²");
         gotoxy(50,10);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²");
+    }
+
+    if(tipo == 5)
+    {
+        gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,3);cout << ("²        Buscar Factura          ²");
+        gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,5);cout << ("²           Factura              ²");
+        gotoxy(30,6);cout << ("²                                ²");
+        gotoxy(30,7);cout << ("²  Numero:                       ²");
+        gotoxy(30,8);cout << ("²                                ²");
+        gotoxy(30,9);cout << ("²                                ²");
+        gotoxy(30,10);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+    }
+
+    if(tipo == 6)
+    {
+        gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,3);cout << ("²        Facturas por Dia        ²");
+        gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,5);cout << ("²           Factura              ²");
+        gotoxy(30,6);cout << ("²                                ²");
+        gotoxy(30,7);cout << ("²  Fecha                         ²");
+        gotoxy(30,8);cout << ("²                                ²");
+        gotoxy(30,9);cout << ("²  Dia:                          ²");
+        gotoxy(30,10);cout << ("²  Mes:                          ²");
+        gotoxy(30,11);cout << ("²  Anio:                         ²");
+        gotoxy(30,12);cout << ("²                                ²");
+        gotoxy(30,13);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+    }
+
+    if(tipo == 7)
+    {
+        gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,3);cout << ("²        Facturas por Dia        ²");
+        gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,5);cout << ("²           Factura              ²");
+        gotoxy(30,6);cout << ("²                                ²");
+        gotoxy(30,7);cout << ("²  Desde       |      Hasta      ²");
+        gotoxy(30,8);cout << ("²              |                 ²");
+        gotoxy(30,9);cout << ("²  Dia:        |      Dia:       ²");
+        gotoxy(30,10);cout << ("²  Mes:        |      Mes:       ²");
+        gotoxy(30,11);cout << ("²  Anio:       |      Anio:      ²");
+        gotoxy(30,12);cout << ("²                                ²");
+        gotoxy(30,13);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+    }
+
+    if(tipo == 8)
+    {
+        gotoxy(30,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,3);cout << ("²        Editar Factura          ²");
+        gotoxy(30,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(30,5);cout << ("²           Factura              ²");
+        gotoxy(30,6);cout << ("²                                ²");
+        gotoxy(30,7);cout << ("²  Numero:                       ²");
+        gotoxy(30,8);cout << ("²                                ²");
+        gotoxy(30,9);cout << ("²                                ²");
+        gotoxy(30,10);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
     }
 
 }
@@ -398,7 +863,7 @@ string leer_letras()
         }
     } while ((tecla != 13 || p[0] == '\0'));
     /* 13 inidica el Enter, i tiene que ser menor
-    que TAM pues de lo contrario, estarÃ­a accediendo
+    que TAM pues de lo contrario, estarÃƒ­a accediendo
     a memoria no reservada*/
 
     p[i] = '\0'; /*colocamos el fin de cadena*/
@@ -424,7 +889,7 @@ string leer_numeros()
         /*8 es la tecla para eliminar un caracter
         y el i obligaotiamente tiene que ser mayor que cero
         ya que si entra al if y tiene valor cero, el valor de i
-        decrementarï¿½ y p tendrï¿½a un subindice -1, "p[-1]"ï¿½?*/
+        decrementarÃ¯¿½ y p tendrÃ¯¿½a un subindice -1, "p[-1]"Ã¯¿½?*/
         if ( i > 0 && tecla == 8 )
         {
             cout << ( "\b \b" );
@@ -441,7 +906,7 @@ string leer_numeros()
         }
     } while ( (tecla != 13 || p[0] == '\0') );
     /* 13 indica el Enter, i tiene que ser menor
-    que TAM pues de lo contrario, estarï¿½a accediendo
+    que TAM pues de lo contrario, estarÃ¯¿½a accediendo
     a memoria no reservada*/
 
     p[i] = '\0'; /*colocamos el fin de cadena*/
@@ -476,6 +941,3 @@ char getcht ( )
     SetConsoleMode ( GetStdHandle (STD_INPUT_HANDLE), modo );
     return car;
 }
-
-
-

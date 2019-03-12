@@ -162,6 +162,14 @@ int main ( )
 {
     bool salir = false;
 
+    Fecha fecha;
+    fecha.datos("12","03", "2019");
+    facturas = insertar_factura( facturas, 123, fecha, "Daniel Viloria");
+
+    infos = insertar_facturaInfo( infos, 123, "Minecraft", 5, 150);
+    infos = insertar_facturaInfo( infos, 123, "GTA", 5, 200);
+
+
     do
     {
 
@@ -185,7 +193,7 @@ int main ( )
             case 3 + TECLA:
                 system("CLS");
                     editar_factura();
-                getch();
+
                 system("CLS");
             break;
 
@@ -412,6 +420,148 @@ void editar_factura()
 
     gotoxy(40, 7); n_factura = atoi( leer_numeros().c_str() );
     system("CLS");
+
+
+    Factura *factura = buscar_factura( facturas, n_factura );
+
+    if ( factura == NULL )
+    {
+        gotoxy(10,2); cout << "Factura no encontrada";
+        return;
+    }
+
+
+    bool salir = false;
+
+    system("CLS");
+
+    do
+    {
+
+        gotoxy(10, 2);cout << "Factura # "<< factura->num ;
+        gotoxy(10, 4);cout << "Cliente: " << factura->cliente;
+        gotoxy(10, 5);cout << "Fecha: "<< factura->fecha.toString();
+
+        gotoxy(10, 12);cout << "___________________________________________________________________";
+        gotoxy(10, 14);cout << "Producto";
+        gotoxy(30, 14);cout << "Cantidad";
+        gotoxy(45, 14);cout << "Valor U.";
+        gotoxy(60, 14);cout << "Total $";
+
+        FacturaInfo *i = infos;
+        int y = 16;
+        int total = 0;
+        int totalProducto = 0;
+
+        while ( i != NULL )
+        {
+            gotoxy(10, y); cout << i->producto;
+            gotoxy(30, y); cout << i->cant;
+            gotoxy(45, y); cout << i->valor_unitario;
+
+            totalProducto 	= i->cant * i->valor_unitario;
+            total 			+= totalProducto;
+
+            gotoxy(60, y); cout << totalProducto;
+            y ++;
+            i = i->sig;
+        }
+
+        gotoxy(10, y+1);cout << "___________________________________________________________________";
+        gotoxy(52, y+3);cout << "Total : " << total;
+
+        switch( menu( 1+TECLA, 4+TECLA, 9) )
+        {
+            case 1 + TECLA:
+            {
+                string producto, nuevo_producto;
+                int cant, valor_unitario;
+                gotoxy(85, 2); cout << "Buscar Producto: ";
+                producto = leer_letras();
+
+                FacturaInfo *fi = buscar_producto( infos, producto );
+
+                if ( fi == NULL )
+                {
+                    gotoxy(85, 5);cout << "Producto no encontrado";
+                }
+
+                gotoxy(85, 5); cout << "Editar producto ";
+
+                gotoxy(85, 6); cout << "Producto: ";
+                nuevo_producto = leer_letras();
+
+                gotoxy(85, 7); cout << "Cantidad: ";
+                cant    = atoi( leer_numeros().c_str() );
+
+                gotoxy(85, 8); cout << "Precio unitario: ";
+                valor_unitario = atoi( leer_numeros().c_str() );
+
+                fi->producto = nuevo_producto;
+                fi->cant     = cant;
+                fi->valor_unitario = valor_unitario;
+
+
+                gotoxy(85, 9); cout << "Producto editado con exito";
+                getch();
+                system("CLS");
+            }
+            break;
+
+            case 2 + TECLA:
+            {
+                string day, month, year;
+                gotoxy(85, 2); cout << "Nueva Fecha";
+                gotoxy(85, 3);
+                cout << "Dia: ";
+                day = leer_numeros();
+                gotoxy(85, 4);
+                cout << "Mes: ";
+                month = leer_numeros();
+                gotoxy(85, 5);
+                cout << "Anio: ";
+                year = leer_numeros();
+
+                Fecha nueva;
+                nueva.datos( day, month, year);
+
+                if ( nueva.valida() )
+                {
+                    factura->fecha = nueva;
+                    gotoxy(85, 8); cout << "Fecha Editada con exito";
+                }else
+                {
+                    gotoxy(85, 8); cout << "ERROR: Fecha no valida";
+                }
+
+                getch();
+                system("CLS");
+            }
+            break;
+
+            case 3 + TECLA:
+            {
+                string cliente;
+                gotoxy(85, 2); cout << "Modificar cliente";
+                gotoxy(85, 3);
+                cout << "Cliente: ";
+                cliente = leer_letras();
+                factura->cliente = cliente;
+                gotoxy(85, 8);cout << "Editado con exito";
+                getch();
+                system("CLS");
+            }
+            break;
+
+            case 4 + TECLA:
+            {
+                salir = true;
+                system("CLS");
+            }
+            break;
+        }
+
+    }while ( ! salir );
 }
 
 
@@ -827,6 +977,20 @@ void menus(int tipo)
         gotoxy(30,8);cout << ("²                                ²");
         gotoxy(30,9);cout << ("²                                ²");
         gotoxy(30,10);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²²");
+    }
+
+
+    if( tipo  == 9 )
+    {
+        gotoxy(50,2);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(50,3);cout << ("² Menu                 ²");
+        gotoxy(50,4);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²");
+        gotoxy(50,5);cout << ("² 1-> Editar producto  ²");
+        gotoxy(50,6);cout << ("² 2-> Editar Fecha     ²");
+        gotoxy(50,7);cout << ("² 3-> Editar Cliente   ²");
+        gotoxy(50,8);cout << ("² 4-> Salir            ²");
+        gotoxy(50,9);cout << ("²                      ²");
+        gotoxy(50,10);cout << ("²²²²²²²²²²²²²²²²²²²²²²²²");
     }
 
 }
